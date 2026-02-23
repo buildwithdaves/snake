@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Snake</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050510;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+    #hud {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 600px;
+      padding: 8px 4px;
+      color: #00ffff;
+      font-size: 16px;
+      text-shadow: 0 0 10px #00ffff;
+      letter-spacing: 2px;
+    }
+    canvas { display: block; }
+    #mobile-controls {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .ctrl-row { display: flex; gap: 6px; }
+    .ctrl-btn {
+      width: 56px; height: 56px;
+      background: rgba(0,255,255,0.1);
+      border: 1.5px solid rgba(0,255,255,0.35);
+      border-radius: 10px;
+      color: #00ffff;
+      font-size: 22px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s;
+    }
+    .ctrl-btn:active { background: rgba(0,255,255,0.35); }
+    @media (max-width: 640px), (pointer: coarse) {
+      #mobile-controls { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <span id="score-el">SCORE: 0</span>
+    <span id="best-el">BEST: 0</span>
+  </div>
+  <canvas id="c"></canvas>
+  <div id="mobile-controls">
+    <div class="ctrl-row"><button class="ctrl-btn" id="btn-up">▲</button></div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="btn-left">◀</button>
+      <button class="ctrl-btn" id="btn-down">▼</button>
+      <button class="ctrl-btn" id="btn-right">▶</button>
+    </div>
+  </div>
+
+<script>
+// ─── Canvas setup ─────────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+const GRID = 20;
+let COLS, ROWS, CELL;
+
+function resize() {
+  const maxW = Math.min(window.innerWidth, 600);
+  const maxH = window.innerHeight - 120;
+  const size  = Math.min(maxW, maxH);
+  COLS  = GRID;
+  ROWS  = GRID;
+  CELL  = Math.floor(size / GRID);
+  canvas.width  = COLS * CELL;
+  canvas.height = ROWS * CELL;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ─── Audio ────────────────────────────────────────────────────────────────────
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playEat() {
+  if (!audioCtx) return;
+  const osc  = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  const t = audioCtx.currentTime;
+  osc.frequency.setValueAtTime(320, t);
+  osc.frequency.linearRampToValueAtTime(640, t + 0.1);
+  gain.gain.setValueAtTime(0.25, t);
+  gain.gain.linearRampToValueAtTime(0, t + 0.12);
+  osc.start(t); osc.stop(t + 0.12);
+}
+
+function playDeath() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  // Noise burst
+  const len    = Math.floor(audioCtx.sampleRate * 0.6);
+  const buf    = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const data   = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const src    = audioCtx.createBufferSource();
+  src.buffer   = buf;
+  const flt    = audioCtx.createBiquadFilter();
+  flt.type     = 'lowpass';
+  flt.frequency.setValueAtTime(1200, t);
+  flt.frequency.linearRampToValueAtTime(80, t + 0.6);
+  const g1     = audioCtx.createGain();
+  g1.gain.setValueAtTime(0.5, t);
+  g1.gain.linearRampToValueAtTime(0, t + 0.6);
+  src.connect(flt); flt.connect(g1); g1.connect(audioCtx.destination);
+  src.start(t); src.stop(t + 0.6);
+  // Descending tone
+  const osc = audioCtx.createOscillator();
+  const g2  = audioCtx.createGain();
+  osc.connect(g2); g2.connect(audioCtx.destination);
+  osc.frequency.setValueAtTime(420, t);
+  osc.frequency.linearRampToValueAtTime(40, t + 0.55);
+  g2.gain.setValueAtTime(0.3, t);
+  g2.gain.linearRampToValueAtTime(0, t + 0.55);
+  osc.start(t); osc.stop(t + 0.55);
+}
+
+// ─── Particles ────────────────────────────────────────────────────────────────
+let particles = [];
+const PALETTE  = ['#00ffff','#00ff99','#00ccff','#ffffff','#aaffee','#ffff88'];
+
+function spawnExplosion(body) {
+  particles = [];
+  body.forEach(seg => {
+    const cx = (seg.x + 0.5) * CELL;
+    const cy = (seg.y + 0.5) * CELL;
+    const n  = 10 + Math.floor(Math.random() * 8);
+    for (let i = 0; i < n; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd   = 1.5 + Math.random() * 5.5;
+      particles.push({
+        x: cx + (Math.random() - 0.5) * CELL * 0.8,
+        y: cy + (Math.random() - 0.5) * CELL * 0.8,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd - 1,
+        life:  1,
+        decay: 0.012 + Math.random() * 0.018,
+        r:     1.5 + Math.random() * 4,
+        color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+        glow:  Math.random() > 0.4,
+      });
+    }
+  });
+}
+
+function stepParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x  += p.vx;
+    p.y  += p.vy;
+    p.vy += 0.09;
+    p.vx *= 0.98;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.life);
+    if (p.glow) { ctx.shadowColor = p.color; ctx.shadowBlur = 12; }
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.max(0.1, p.r * p.life), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const S = { START:0, PLAYING:1, DYING:2, DEAD:3 };
+let state, snake, dir, nextDir, food, score, highScore, msPerMove;
+let flashAlpha = 0, shakeLeft = 0, deathAt = 0;
+let moveAccum = 0, lastTs = 0;
+
+try { highScore = parseInt(localStorage.getItem('snakeHigh') || '0') || 0; } catch { highScore = 0; }
+let newRecord = false;
+updateHUD();
+
+function initGame() {
+  const mx = Math.floor(COLS / 2);
+  const my = Math.floor(ROWS / 2);
+  snake     = [{ x:mx, y:my }, { x:mx-1, y:my }, { x:mx-2, y:my }];
+  dir       = { x:1, y:0 };
+  nextDir   = { x:1, y:0 };
+  score     = 0;
+  msPerMove = 150;
+  particles = [];
+  flashAlpha = 0;
+  shakeLeft  = 0;
+  moveAccum  = 0;
+  placeFood();
+  updateHUD();
+}
+
+function placeFood() {
+  // Collect all empty cells to avoid an infinite loop when the board is nearly full
+  const empty = [];
+  for (let x = 0; x < COLS; x++) {
+    for (let y = 0; y < ROWS; y++) {
+      if (!snake.some(s => s.x === x && s.y === y)) empty.push({ x, y });
+    }
+  }
+  if (empty.length === 0) { triggerWin(); return; }
+  food = empty[Math.floor(Math.random() * empty.length)];
+}
+
+function triggerWin() {
+  // Board completely filled — player wins
+  state      = S.DYING;
+  flashAlpha = 1;
+  shakeLeft  = 320;
+  deathAt    = performance.now();
+  newRecord  = score > highScore;
+  if (newRecord) {
+    highScore = score;
+    try { localStorage.setItem('snakeHigh', highScore); } catch {}
+    updateHUD();
+  }
+  spawnExplosion(snake);
+  playDeath();
+  setTimeout(() => { state = S.DEAD; }, 1600);
+}
+
+function updateHUD() {
+  document.getElementById('score-el').textContent = `SCORE: ${score||0}`;
+  document.getElementById('best-el').textContent  = `BEST: ${highScore}`;
+}
+
+// ─── Input ────────────────────────────────────────────────────────────────────
+function tryStart() {
+  ensureAudio();
+  if (state === S.START || state === S.DEAD) { initGame(); state = S.PLAYING; }
+}
+
+function tryDir(dx, dy) {
+  if (state !== S.PLAYING) return;
+  if (dx !== 0 && dir.x !== -dx) nextDir = { x:dx, y:0  };
+  if (dy !== 0 && dir.y !== -dy) nextDir = { x:0,  y:dy };
+}
+
+document.addEventListener('keydown', e => {
+  const STARTS = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','Enter'];
+  if (STARTS.includes(e.key)) tryStart();
+  switch (e.key) {
+    case 'ArrowUp':    case 'w': tryDir(0,-1); break;
+    case 'ArrowDown':  case 's': tryDir(0, 1); break;
+    case 'ArrowLeft':  case 'a': tryDir(-1,0); break;
+    case 'ArrowRight': case 'd': tryDir( 1,0); break;
+  }
+});
+
+function wireBtn(id, dx, dy) {
+  const btn = document.getElementById(id);
+  const handler = e => { e.preventDefault(); tryStart(); tryDir(dx, dy); };
+  btn.addEventListener('touchstart', handler, { passive:false });
+  btn.addEventListener('mousedown',  handler);
+}
+wireBtn('btn-up',    0,-1);
+wireBtn('btn-down',  0, 1);
+wireBtn('btn-left', -1, 0);
+wireBtn('btn-right', 1, 0);
+
+// Swipe
+let swipeStart = null;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length > 0)
+    swipeStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}, { passive:true });
+canvas.addEventListener('touchend', e => {
+  if (!swipeStart || e.changedTouches.length === 0) return;
+  tryStart();
+  const dx   = e.changedTouches[0].clientX - swipeStart.x;
+  const dy   = e.changedTouches[0].clientY - swipeStart.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist >= 15) {
+    if (Math.abs(dx) > Math.abs(dy)) tryDir(dx > 0 ? 1 : -1, 0);
+    else                             tryDir(0, dy > 0 ? 1 : -1);
+  }
+  swipeStart = null;
+});
+
+// ─── Game logic ───────────────────────────────────────────────────────────────
+function step() {
+  dir = { ...nextDir };
+  const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+  if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS ||
+      snake.some(s => s.x === head.x && s.y === head.y)) {
+    killSnake(); return;
+  }
+
+  snake.unshift(head);
+  if (head.x === food.x && head.y === food.y) {
+    score++;
+    msPerMove = Math.max(55, 150 - score * 4);
+    playEat();
+    placeFood();
+    updateHUD();
+  } else {
+    snake.pop();
+  }
+}
+
+function killSnake() {
+  state      = S.DYING;
+  flashAlpha = 1;
+  shakeLeft  = 320;
+  deathAt    = performance.now();
+  newRecord  = score > highScore;
+  if (newRecord) {
+    highScore = score;
+    try { localStorage.setItem('snakeHigh', highScore); } catch {}
+    updateHUD();
+  }
+  spawnExplosion(snake);
+  playDeath();
+  setTimeout(() => { state = S.DEAD; }, 1600);
+}
+
+// ─── Drawing ─────────────────────────────────────────────────────────────────
+function drawGrid() {
+  ctx.strokeStyle = 'rgba(0,255,255,0.035)';
+  ctx.lineWidth   = 0.5;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath(); ctx.moveTo(x*CELL, 0); ctx.lineTo(x*CELL, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y*CELL); ctx.lineTo(canvas.width, y*CELL); ctx.stroke();
+  }
+}
+
+function drawSnake() {
+  const len = snake.length;
+  snake.forEach((seg, i) => {
+    const head = i === 0;
+    const t    = i / len;
+    const cx   = (seg.x + 0.5) * CELL;
+    const cy   = (seg.y + 0.5) * CELL;
+    const r    = (head ? 0.46 : 0.38) * CELL;
+
+    ctx.save();
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur  = head ? 22 : 12;
+
+    // Body
+    const bright = Math.floor(255 - t * 120);
+    ctx.fillStyle = head ? '#00ffff' : `rgba(0,${bright},${bright},${1 - t * 0.35})`;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+
+    if (head) {
+      // Inner shine
+      ctx.shadowBlur  = 0;
+      ctx.fillStyle   = 'rgba(255,255,255,0.38)';
+      ctx.beginPath(); ctx.arc(cx - r*0.22, cy - r*0.22, r*0.32, 0, Math.PI*2); ctx.fill();
+
+      // Eyes
+      const ea  = r * 0.38;
+      const ep  = r * 0.28;
+      const px  = -dir.y;
+      const py  =  dir.x;
+      ctx.fillStyle = '#001a1a';
+      [1, -1].forEach(s => {
+        ctx.beginPath();
+        ctx.arc(cx + dir.x*ea + px*ep*s, cy + dir.y*ea + py*ep*s, r*0.17, 0, Math.PI*2);
+        ctx.fill();
+      });
+      // Eye glints
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      [1, -1].forEach(s => {
+        ctx.beginPath();
+        ctx.arc(cx + dir.x*ea + px*ep*s + 1, cy + dir.y*ea + py*ep*s - 1, r*0.07, 0, Math.PI*2);
+        ctx.fill();
+      });
+    }
+    ctx.restore();
+  });
+}
+
+function drawFood(now) {
+  const pulse = Math.sin(now / 280) * 0.18 + 0.82;
+  const cx    = (food.x + 0.5) * CELL;
+  const cy    = (food.y + 0.5) * CELL;
+  const r     = CELL * 0.36 * pulse;
+
+  ctx.save();
+  ctx.shadowColor = '#ff2244';
+  ctx.shadowBlur  = 22 * pulse;
+
+  const grad = ctx.createRadialGradient(cx - r*0.3, cy - r*0.35, r*0.05, cx, cy, r);
+  grad.addColorStop(0,   '#ffbbcc');
+  grad.addColorStop(0.4, '#ff2244');
+  grad.addColorStop(1,   '#7a0020');
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+
+  // Orbiting sparkle
+  const a  = now / 680;
+  const sr = CELL * 0.48;
+  ctx.shadowColor = '#ffff44'; ctx.shadowBlur = 10;
+  ctx.fillStyle   = '#ffff44';
+  ctx.beginPath(); ctx.arc(cx + Math.cos(a)*sr, cy + Math.sin(a)*sr, 2.2, 0, Math.PI*2); ctx.fill();
+  // Second sparkle offset
+  ctx.shadowColor = '#ff88ff'; ctx.shadowBlur = 8;
+  ctx.fillStyle   = '#ff88ff';
+  ctx.beginPath(); ctx.arc(cx + Math.cos(a + Math.PI)*sr*0.7, cy + Math.sin(a + Math.PI)*sr*0.7, 1.5, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawStart(now) {
+  const w = canvas.width, h = canvas.height;
+  const t = now / 1000;
+
+  // Animated background pulses
+  for (let i = 0; i < 3; i++) {
+    const pr = (Math.sin(t * 0.4 + i * 1.2) * 0.5 + 0.5) * Math.min(w, h) * 0.5;
+    const grd = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, pr);
+    grd.addColorStop(0,   'rgba(0,255,255,0.04)');
+    grd.addColorStop(1,   'rgba(0,255,255,0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  const fs = Math.min(w * 0.13, 72);
+  ctx.save();
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Title glow layers
+  ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 50;
+  ctx.fillStyle   = 'rgba(0,255,255,0.25)';
+  ctx.font = `bold ${fs * 1.06}px 'Courier New', monospace`;
+  ctx.fillText('SNAKE', w/2, h * 0.36);
+  ctx.shadowBlur = 20;
+  ctx.fillStyle  = '#00ffff';
+  ctx.font = `bold ${fs}px 'Courier New', monospace`;
+  ctx.fillText('SNAKE', w/2, h * 0.36);
+
+  const blink = (Math.sin(t * 2.5) > 0);
+  ctx.shadowBlur  = 12;
+  ctx.fillStyle   = blink ? '#00ffcc' : 'rgba(0,255,200,0.5)';
+  ctx.font        = `${Math.min(w*0.042,20)}px 'Courier New', monospace`;
+  ctx.fillText('PRESS ANY KEY TO START', w/2, h * 0.55);
+
+  ctx.shadowBlur  = 0;
+  ctx.fillStyle   = 'rgba(0,200,200,0.45)';
+  ctx.font        = `${Math.min(w*0.033,15)}px 'Courier New', monospace`;
+  ctx.fillText('ARROW KEYS · WASD · SWIPE', w/2, h * 0.65);
+  ctx.restore();
+}
+
+function drawGameOver(now) {
+  const elapsed = now - deathAt;
+  if (elapsed < 500) return;
+  const alpha = Math.min(1, (elapsed - 500) / 400);
+  const w = canvas.width, h = canvas.height;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Darken background
+  ctx.fillStyle = 'rgba(0,0,0,0.72)';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+
+  // "GAME OVER"
+  const fs = Math.min(w * 0.11, 60);
+  ctx.shadowColor = '#ff2244'; ctx.shadowBlur = 40;
+  ctx.fillStyle   = '#ff2244';
+  ctx.font        = `bold ${fs}px 'Courier New', monospace`;
+  ctx.fillText('GAME OVER', w/2, h * 0.34);
+
+  // Score
+  ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 18;
+  ctx.fillStyle   = '#00ffff';
+  ctx.font        = `${Math.min(w*0.055,28)}px 'Courier New', monospace`;
+  ctx.fillText(`SCORE: ${score}`, w/2, h * 0.48);
+
+  // New high score
+  if (score > 0 && newRecord) {
+    ctx.shadowColor = '#ffff44'; ctx.shadowBlur = 20;
+    ctx.fillStyle   = '#ffff44';
+    ctx.font        = `${Math.min(w*0.038,18)}px 'Courier New', monospace`;
+    ctx.fillText('✦ NEW HIGH SCORE ✦', w/2, h * 0.575);
+  }
+
+  // Restart prompt
+  const blink = (Math.sin(now / 480) > 0);
+  ctx.shadowBlur  = 10;
+  ctx.fillStyle   = blink ? '#00ffcc' : 'rgba(0,255,200,0.45)';
+  ctx.font        = `${Math.min(w*0.038,17)}px 'Courier New', monospace`;
+  ctx.fillText('PRESS ANY KEY TO PLAY AGAIN', w/2, h * 0.69);
+
+  ctx.restore();
+}
+
+// ─── Main loop ────────────────────────────────────────────────────────────────
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(now - lastTs, 100); // cap to avoid spiral of death
+  lastTs   = now;
+
+  // Snake movement
+  if (state === S.PLAYING) {
+    moveAccum += dt;
+    if (moveAccum >= msPerMove) {
+      moveAccum -= msPerMove;
+      step();
+    }
+  }
+
+  // Particles
+  if (state === S.DYING || state === S.DEAD) stepParticles();
+
+  // Shake
+  let sx = 0, sy = 0;
+  if (shakeLeft > 0) {
+    shakeLeft -= dt;
+    const mag = (shakeLeft / 320) * 9;
+    sx = (Math.random() - 0.5) * mag;
+    sy = (Math.random() - 0.5) * mag;
+  }
+
+  // ── Render ──
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.translate(sx, sy);
+  drawGrid();
+
+  if (state === S.START) {
+    drawStart(now);
+  } else {
+    if (state === S.PLAYING) {
+      drawFood(now);
+      drawSnake();
+    } else {
+      // Dying / Dead — particles + game-over overlay (overlay has its own fade-in delay)
+      drawParticles();
+      drawGameOver(now);
+    }
+  }
+  ctx.restore();
+
+  // White flash
+  if (flashAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = flashAlpha;
+    ctx.fillStyle   = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    flashAlpha = Math.max(0, flashAlpha - dt / 160);
+  }
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+state = S.START;
+requestAnimationFrame(ts => { lastTs = ts; requestAnimationFrame(loop); });
+</script>
+</body>
+</html>
