@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aliza's Kitchen</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Background ── */
+    body {
+      min-height: 100vh;
+      background: #080812;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #f0e8ff;
+      overflow-x: hidden;
+    }
+
+    /* Animated gradient orbs */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, #ff2d78, #8800cc);
+      top: -180px; left: -150px;
+      animation: orb1 14s ease-in-out infinite alternate;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #ff8c00, #ff2d78);
+      bottom: -100px; right: -100px;
+      animation: orb2 18s ease-in-out infinite alternate;
+    }
+    @keyframes orb1 {
+      0%   { transform: translate(0,0) scale(1); }
+      50%  { transform: translate(80px, 60px) scale(1.15); }
+      100% { transform: translate(20px, 120px) scale(0.95); }
+    }
+    @keyframes orb2 {
+      0%   { transform: translate(0,0) scale(1); }
+      50%  { transform: translate(-60px, -40px) scale(1.1); }
+      100% { transform: translate(-120px, 60px) scale(0.9); }
+    }
+
+    /* Third orb */
+    .orb3 {
+      position: fixed;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #00e5ff, #007bff);
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.2;
+      bottom: 20%; left: 30%;
+      pointer-events: none;
+      z-index: 0;
+      animation: orb3 22s ease-in-out infinite alternate;
+    }
+    @keyframes orb3 {
+      0%   { transform: translate(0,0) scale(1); }
+      100% { transform: translate(60px, -80px) scale(1.2); }
+    }
+
+    /* Subtle grid overlay */
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px 60px;
+    }
+
+    /* ── Header / Title ── */
+    header {
+      margin-bottom: 48px;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .aliza-wrap {
+      flex-shrink: 0;
+      animation: aliza-float 4s ease-in-out infinite;
+      filter: drop-shadow(0 6px 28px rgba(255,126,179,0.5))
+              drop-shadow(0 0 12px rgba(255,45,120,0.3));
+    }
+    @keyframes aliza-float {
+      0%,100% { transform: translateY(0);   }
+      50%      { transform: translateY(-8px); }
+    }
+
+    .title-block { text-align: center; }
+
+    .title-wrap {
+      display: inline-block;
+      position: relative;
+    }
+
+    .title {
+      font-size: clamp(2.6rem, 7vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1;
+      background: linear-gradient(90deg, #ff2d78, #ff8c00, #ffe600, #00e5ff, #ff2d78);
+      background-size: 300% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: neonShift 5s linear infinite;
+      filter: drop-shadow(0 0 18px rgba(255,45,120,0.7));
+    }
+    @keyframes neonShift {
+      0%   { background-position: 0% center; }
+      100% { background-position: 300% center; }
+    }
+
+    /* Neon underline flicker */
+    .title-underline {
+      display: block;
+      height: 3px;
+      margin: 8px auto 0;
+      width: 60%;
+      background: linear-gradient(90deg, #ff2d78, #ff8c00, #ffe600, #00e5ff);
+      border-radius: 2px;
+      box-shadow: 0 0 12px #ff2d78, 0 0 24px #ff8c00;
+      animation: flicker 4s ease-in-out infinite;
+    }
+    @keyframes flicker {
+      0%,100% { opacity: 1; }
+      92%      { opacity: 1; }
+      93%      { opacity: 0.4; }
+      94%      { opacity: 1; }
+      96%      { opacity: 0.6; }
+      97%      { opacity: 1; }
+    }
+
+    .subtitle {
+      margin-top: 14px;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ── Input panel ── */
+    .panel {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 28px 28px 22px;
+      margin-bottom: 32px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+
+    .panel-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 14px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .ingredient-input {
+      flex: 1;
+      padding: 12px 18px;
+      background: rgba(255,255,255,0.07);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .ingredient-input::placeholder { color: rgba(255,255,255,0.3); }
+    .ingredient-input:focus {
+      border-color: #ff2d78;
+      box-shadow: 0 0 0 3px rgba(255,45,120,0.2);
+    }
+
+    .btn {
+      padding: 12px 22px;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.2s, opacity 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .btn:active { transform: scale(0.96); }
+
+    .btn-add {
+      background: linear-gradient(135deg, #ff2d78, #ff8c00);
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(255,45,120,0.45);
+      white-space: nowrap;
+    }
+    .btn-add:hover { box-shadow: 0 4px 28px rgba(255,45,120,0.7); }
+
+    .btn-search {
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(0,114,255,0.45);
+      font-size: 1rem;
+      padding: 14px 32px;
+    }
+    .btn-search:hover { box-shadow: 0 4px 28px rgba(0,114,255,0.7); }
+
+    .btn-clear {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .btn-clear:hover { background: rgba(255,255,255,0.13); color: #fff; }
+
+    /* Chips */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+      min-height: 0;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,45,120,0.18);
+      border: 1px solid rgba(255,45,120,0.4);
+      color: #ffb3ce;
+      padding: 5px 12px 5px 14px;
+      border-radius: 99px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      animation: chipIn 0.2s ease;
+    }
+    @keyframes chipIn {
+      from { opacity: 0; transform: scale(0.75); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .chip-x {
+      background: none;
+      border: none;
+      color: rgba(255,100,150,0.7);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0;
+      transition: color 0.15s;
+    }
+    .chip-x:hover { color: #ff2d78; }
+
+    /* Action bar */
+    .action-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .ingredient-count {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.35);
+      flex: 1;
+    }
+
+    /* Sort toggle */
+    .sort-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .sort-label {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .sort-btn {
+      padding: 6px 16px;
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      background: transparent;
+      color: rgba(255,255,255,0.45);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .sort-btn.active {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.35);
+      color: #fff;
+    }
+
+    /* ── Recipe grid ── */
+    .recipes-header {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 20px;
+    }
+
+    .recipes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .recipe-card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 22px;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      animation: cardIn 0.35s ease both;
+    }
+    .recipe-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      border-color: rgba(255,255,255,0.2);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .card-emoji {
+      font-size: 2.2rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .card-meta { flex: 1; }
+    .card-name {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+    .card-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .badge-breakfast { background: rgba(255,200,0,0.18); color: #ffd54f; border: 1px solid rgba(255,200,0,0.3); }
+    .badge-lunch     { background: rgba(0,200,100,0.18); color: #69f0ae; border: 1px solid rgba(0,200,100,0.3); }
+    .badge-dinner    { background: rgba(100,80,255,0.18); color: #b39ddb; border: 1px solid rgba(100,80,255,0.3); }
+    .badge-snack     { background: rgba(255,100,0,0.18); color: #ffab76; border: 1px solid rgba(255,100,0,0.3); }
+    .badge-dessert   { background: rgba(255,45,120,0.18); color: #f48fb1; border: 1px solid rgba(255,45,120,0.3); }
+    .badge-drink     { background: rgba(0,200,255,0.18); color: #80deea; border: 1px solid rgba(0,200,255,0.3); }
+
+    .badge-time {
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.45);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 0.72rem;
+      padding: 2px 9px;
+      border-radius: 99px;
+    }
+
+    /* Match bar */
+    .match-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .match-bar-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .match-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .match-pct {
+      font-size: 0.8rem;
+      font-weight: 700;
+      min-width: 38px;
+      text-align: right;
+    }
+
+    /* match color tiers */
+    .tier-high  .match-bar-fill { background: linear-gradient(90deg,#00e676,#69f0ae); }
+    .tier-high  .match-pct      { color: #69f0ae; }
+    .tier-mid   .match-bar-fill { background: linear-gradient(90deg,#ff8c00,#ffe600); }
+    .tier-mid   .match-pct      { color: #ffd740; }
+    .tier-low   .match-bar-fill { background: linear-gradient(90deg,#ff2d78,#ff6e40); }
+    .tier-low   .match-pct      { color: #ff6e91; }
+
+    /* Description */
+    .card-desc {
+      font-size: 0.84rem;
+      color: rgba(255,255,255,0.38);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* Ingredients list */
+    .ingredients-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+      margin-bottom: 8px;
+    }
+    .ingredients-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .ing-tag {
+      font-size: 0.78rem;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-weight: 500;
+    }
+    .ing-have {
+      background: rgba(0,230,118,0.15);
+      color: #69f0ae;
+      border: 1px solid rgba(0,230,118,0.3);
+    }
+    .ing-missing {
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+      text-decoration: line-through;
+      text-decoration-color: rgba(255,255,255,0.15);
+    }
+
+    /* Empty / no-results states */
+    .state-box {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255,255,255,0.25);
+    }
+    .state-box .state-icon { font-size: 3.5rem; margin-bottom: 14px; }
+    .state-box .state-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: rgba(255,255,255,0.4); }
+    .state-box .state-hint  { font-size: 0.88rem; }
+
+    /* Responsive */
+    @media (max-width: 560px) {
+      .container { padding: 28px 14px 50px; }
+      .panel { padding: 18px 16px; }
+      .btn-search { width: 100%; justify-content: center; }
+      .action-bar { flex-direction: column; align-items: stretch; }
+      .action-bar .btn { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb3"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="header-inner">
+        <!-- Aliza character -->
+        <div class="aliza-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 275" width="160" height="244" aria-label="Aliza, a girl with curly hair wearing a chef's hat">
+            <defs>
+              <radialGradient id="sg" cx="40%" cy="35%" r="70%">
+                <stop offset="0%" stop-color="#FEF0DC"/>
+                <stop offset="100%" stop-color="#FDDBB4"/>
+              </radialGradient>
+              <radialGradient id="hg" cx="45%" cy="25%" r="70%">
+                <stop offset="0%" stop-color="#A06840"/>
+                <stop offset="100%" stop-color="#6B3820"/>
+              </radialGradient>
+            </defs>
+
+            <!-- ── BACK HAIR ── -->
+            <!-- Top curls -->
+            <circle cx="60" cy="54" r="20" fill="url(#hg)"/>
+            <circle cx="90" cy="43" r="23" fill="url(#hg)"/>
+            <circle cx="120" cy="54" r="20" fill="url(#hg)"/>
+            <!-- Side ringlets left -->
+            <circle cx="36" cy="82" r="18" fill="url(#hg)"/>
+            <circle cx="33" cy="103" r="16" fill="url(#hg)"/>
+            <circle cx="36" cy="122" r="15" fill="url(#hg)"/>
+            <!-- Side ringlets right -->
+            <circle cx="144" cy="82" r="18" fill="url(#hg)"/>
+            <circle cx="147" cy="103" r="16" fill="url(#hg)"/>
+            <circle cx="144" cy="122" r="15" fill="url(#hg)"/>
+
+            <!-- ── NECK ── -->
+            <rect x="82" y="128" width="18" height="24" rx="7" fill="url(#sg)"/>
+
+            <!-- ── ARMS (behind body) ── -->
+            <path d="M 46 162 Q 22 178 16 206" stroke="#FF95C0" stroke-width="22" fill="none" stroke-linecap="round"/>
+            <path d="M 134 162 Q 158 178 164 206" stroke="#FF95C0" stroke-width="22" fill="none" stroke-linecap="round"/>
+
+            <!-- ── DRESS BODY ── -->
+            <ellipse cx="90" cy="196" rx="52" ry="48" fill="#FF7EB3"/>
+            <!-- Dress sheen -->
+            <ellipse cx="78" cy="168" rx="18" ry="10" fill="#FF9EC8" opacity="0.5"/>
+
+            <!-- ── HEAD ── -->
+            <ellipse cx="90" cy="92" rx="42" ry="44" fill="url(#sg)"/>
+
+            <!-- ── FRONT HAIR (overlaps forehead) ── -->
+            <path d="M 52 86 Q 55 46 90 40 Q 125 46 128 86 Q 116 64 90 59 Q 64 64 52 86 Z" fill="url(#hg)"/>
+            <!-- Curly ringlets forehead -->
+            <circle cx="62" cy="64" r="16" fill="url(#hg)"/>
+            <circle cx="83" cy="52" r="17" fill="url(#hg)"/>
+            <circle cx="105" cy="52" r="17" fill="url(#hg)"/>
+            <circle cx="122" cy="64" r="15" fill="url(#hg)"/>
+            <!-- Hair highlights -->
+            <circle cx="63" cy="59" r="6" fill="#C08850" opacity="0.38"/>
+            <circle cx="84" cy="47" r="6.5" fill="#C08850" opacity="0.34"/>
+            <circle cx="106" cy="47" r="6.5" fill="#C08850" opacity="0.34"/>
+            <circle cx="122" cy="59" r="5.5" fill="#C08850" opacity="0.38"/>
+
+            <!-- ── FACE ── -->
+            <!-- Cheeks -->
+            <ellipse cx="62" cy="105" rx="13" ry="9" fill="#FFB0C8" opacity="0.6"/>
+            <ellipse cx="118" cy="105" rx="13" ry="9" fill="#FFB0C8" opacity="0.6"/>
+
+            <!-- Eyebrows -->
+            <path d="M 66 78 Q 74 73 82 76" stroke="#6B3820" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <path d="M 98 76 Q 106 73 114 78" stroke="#6B3820" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+            <!-- Eye whites -->
+            <ellipse cx="74" cy="89" rx="9" ry="10" fill="white"/>
+            <ellipse cx="106" cy="89" rx="9" ry="10" fill="white"/>
+            <!-- Irises -->
+            <circle cx="74" cy="90" r="6.5" fill="#8B5A2A"/>
+            <circle cx="106" cy="90" r="6.5" fill="#8B5A2A"/>
+            <!-- Pupils -->
+            <circle cx="75" cy="90" r="4" fill="#1A0800"/>
+            <circle cx="107" cy="90" r="4" fill="#1A0800"/>
+            <!-- Eye sparkle (large) -->
+            <circle cx="78" cy="87" r="2.2" fill="white"/>
+            <circle cx="110" cy="87" r="2.2" fill="white"/>
+            <!-- Eye sparkle (small) -->
+            <circle cx="76" cy="92" r="1" fill="white" opacity="0.6"/>
+            <circle cx="108" cy="92" r="1" fill="white" opacity="0.6"/>
+
+            <!-- Eyelash curves (top) -->
+            <path d="M 65 82 Q 74 77 83 81" stroke="#3D2010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            <path d="M 97 81 Q 106 77 115 82" stroke="#3D2010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+
+            <!-- Nose -->
+            <path d="M 86 103 Q 90 108 94 103" stroke="#D09070" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+
+            <!-- Smile -->
+            <path d="M 72 116 Q 90 132 108 116" stroke="#C06848" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <!-- Teeth -->
+            <path d="M 73 118 Q 90 130 107 118 Q 107 121 90 130 Q 73 121 73 118 Z" fill="white"/>
+
+            <!-- ── CHEF HAT ── -->
+            <!-- Brim -->
+            <rect x="62" y="36" width="62" height="13" rx="6.5" fill="white" stroke="#D8D8D8" stroke-width="1.5"/>
+            <!-- Dome -->
+            <ellipse cx="90" cy="24" rx="28" ry="21" fill="white" stroke="#D8D8D8" stroke-width="1.5"/>
+            <!-- Fold shadow -->
+            <path d="M 64 43 Q 90 50 116 43" stroke="#CCCCCC" stroke-width="1.5" fill="none"/>
+            <!-- Hat pleat lines -->
+            <path d="M 80 26 Q 80 36 80 44" stroke="#E0E0E0" stroke-width="1" fill="none" opacity="0.7"/>
+            <path d="M 90 23 Q 90 36 90 44" stroke="#E0E0E0" stroke-width="1" fill="none" opacity="0.7"/>
+            <path d="M 100 26 Q 100 36 100 44" stroke="#E0E0E0" stroke-width="1" fill="none" opacity="0.7"/>
+
+            <!-- ── HANDS ── -->
+            <!-- Left hand -->
+            <circle cx="14" cy="210" r="13" fill="url(#sg)"/>
+            <circle cx="5"  cy="202" r="5.5" fill="url(#sg)"/>
+            <circle cx="3"  cy="213" r="5"   fill="url(#sg)"/>
+            <!-- Right hand -->
+            <circle cx="166" cy="210" r="13" fill="url(#sg)"/>
+            <circle cx="175" cy="202" r="5.5" fill="url(#sg)"/>
+            <circle cx="177" cy="213" r="5"   fill="url(#sg)"/>
+
+            <!-- ── APRON ── -->
+            <path d="M 64 158 L 58 240 Q 90 248 122 240 L 116 158 Q 106 153 90 152 Q 74 153 64 158 Z" fill="white" opacity="0.92"/>
+            <!-- Apron bib -->
+            <rect x="74" y="140" width="32" height="22" rx="10" fill="white" opacity="0.92"/>
+            <!-- Knot -->
+            <ellipse cx="90" cy="160" rx="9" ry="6" fill="white" opacity="0.92"/>
+            <!-- Pocket -->
+            <rect x="74" y="206" width="34" height="26" rx="6" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+            <!-- Heart on pocket -->
+            <path d="M 89 216 C 89 213 93 213 93 216 C 93 219 89 222 89 222 C 89 222 85 219 85 216 C 85 213 89 213 89 216 Z" fill="#FF85A1"/>
+
+            <!-- ── WOODEN SPOON (right hand) ── -->
+            <line x1="167" y1="200" x2="162" y2="265" stroke="#9B7030" stroke-width="5.5" stroke-linecap="round"/>
+            <ellipse cx="165" cy="197" rx="9" ry="11" fill="#B88040"/>
+            <ellipse cx="165" cy="197" rx="5.5" ry="7" fill="#CCAA60" opacity="0.55"/>
+
+            <!-- ── SPARKLES ── -->
+            <g font-size="18" opacity="0.75">
+              <text x="4"   y="62">✨</text>
+              <text x="152" y="56" font-size="15">⭐</text>
+              <text x="0"   y="150" font-size="13">✦</text>
+              <text x="158" y="150" font-size="13">✦</text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Title -->
+        <div class="title-block">
+          <div class="title-wrap">
+            <h1 class="title">Aliza's Kitchen</h1>
+            <span class="title-underline"></span>
+          </div>
+          <p class="subtitle">What's in your fridge?</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Input panel -->
+    <div class="panel">
+      <div class="panel-label">Add your ingredients</div>
+      <div class="input-row">
+        <input id="ing-input" class="ingredient-input" type="text"
+               placeholder="e.g. eggs, tomatoes, garlic…" autocomplete="off">
+        <button class="btn btn-add" onclick="addIngredient()">+ Add</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="action-bar">
+        <span class="ingredient-count" id="ing-count">No ingredients yet</span>
+        <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+        <button class="btn btn-search" onclick="findRecipes()">Find Recipes ✦</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results-area"></div>
+  </div>
+
+<script>
+// ── Recipe data ────────────────────────────────────────────────────────────────
+const RECIPES = [
+  {
+    name: 'Spaghetti Bolognese',
+    emoji: '🍝',
+    category: 'dinner',
+    cookTime: '40 min',
+    description: 'A rich Italian meat sauce slow-cooked over al-dente spaghetti.',
+    ingredients: ['spaghetti', 'ground beef', 'tomatoes', 'onion', 'garlic', 'olive oil', 'tomato paste', 'basil'],
+  },
+  {
+    name: 'Fluffy Pancakes',
+    emoji: '🥞',
+    category: 'breakfast',
+    cookTime: '20 min',
+    description: 'Golden, airy pancakes perfect with maple syrup or fresh fruit.',
+    ingredients: ['flour', 'eggs', 'milk', 'butter', 'sugar', 'baking powder', 'vanilla'],
+  },
+  {
+    name: 'Classic Omelette',
+    emoji: '🍳',
+    category: 'breakfast',
+    cookTime: '8 min',
+    description: 'A silky folded omelette stuffed with cheese and herbs.',
+    ingredients: ['eggs', 'butter', 'cheese', 'salt', 'pepper', 'chives'],
+  },
+  {
+    name: 'Avocado Toast',
+    emoji: '🥑',
+    category: 'breakfast',
+    cookTime: '5 min',
+    description: 'Creamy smashed avocado on toasted bread with a squeeze of lemon.',
+    ingredients: ['bread', 'avocado', 'lemon', 'salt', 'pepper', 'chili flakes'],
+  },
+  {
+    name: 'French Toast',
+    emoji: '🍞',
+    category: 'breakfast',
+    cookTime: '15 min',
+    description: 'Custardy bread golden-fried in butter and dusted with cinnamon sugar.',
+    ingredients: ['bread', 'eggs', 'milk', 'cinnamon', 'butter', 'maple syrup', 'vanilla'],
+  },
+  {
+    name: 'Caesar Salad',
+    emoji: '🥗',
+    category: 'lunch',
+    cookTime: '10 min',
+    description: 'Crisp romaine with tangy Caesar dressing and crunchy croutons.',
+    ingredients: ['romaine lettuce', 'parmesan', 'croutons', 'lemon', 'garlic', 'olive oil', 'mayo'],
+  },
+  {
+    name: 'Greek Salad',
+    emoji: '🫒',
+    category: 'lunch',
+    cookTime: '8 min',
+    description: 'A refreshing Mediterranean salad with olives and creamy feta.',
+    ingredients: ['tomatoes', 'cucumber', 'olives', 'feta cheese', 'onion', 'olive oil', 'oregano'],
+  },
+  {
+    name: 'BLT Sandwich',
+    emoji: '🥪',
+    category: 'lunch',
+    cookTime: '12 min',
+    description: 'A diner classic — crispy bacon, fresh lettuce, and ripe tomato.',
+    ingredients: ['bread', 'bacon', 'lettuce', 'tomatoes', 'mayonnaise'],
+  },
+  {
+    name: 'Grilled Cheese',
+    emoji: '🧀',
+    category: 'lunch',
+    cookTime: '8 min',
+    description: 'Buttery golden bread with gloriously melted cheese inside.',
+    ingredients: ['bread', 'cheese', 'butter'],
+  },
+  {
+    name: 'Tomato Soup',
+    emoji: '🍅',
+    category: 'lunch',
+    cookTime: '25 min',
+    description: 'Velvety roasted tomato soup finished with a swirl of cream.',
+    ingredients: ['tomatoes', 'onion', 'garlic', 'cream', 'butter', 'basil', 'olive oil'],
+  },
+  {
+    name: 'Chicken Stir Fry',
+    emoji: '🍜',
+    category: 'dinner',
+    cookTime: '20 min',
+    description: 'Tender chicken and crisp vegetables in a savory soy-ginger glaze.',
+    ingredients: ['chicken', 'bell pepper', 'soy sauce', 'garlic', 'ginger', 'onion', 'oil', 'cornstarch'],
+  },
+  {
+    name: 'Chicken Noodle Soup',
+    emoji: '🍲',
+    category: 'dinner',
+    cookTime: '45 min',
+    description: 'Comforting golden broth with tender chicken and soft noodles.',
+    ingredients: ['chicken', 'carrots', 'celery', 'onion', 'garlic', 'noodles', 'chicken broth', 'salt', 'pepper'],
+  },
+  {
+    name: 'Fried Rice',
+    emoji: '🍚',
+    category: 'dinner',
+    cookTime: '15 min',
+    description: 'Wok-tossed rice with egg, vegetables, and a hit of soy sauce.',
+    ingredients: ['rice', 'eggs', 'soy sauce', 'onion', 'garlic', 'oil', 'carrots', 'peas', 'sesame oil'],
+  },
+  {
+    name: 'Garlic Pasta',
+    emoji: '🧄',
+    category: 'dinner',
+    cookTime: '15 min',
+    description: 'Aglio e olio — pasta tossed in fragrant garlic-infused olive oil.',
+    ingredients: ['pasta', 'garlic', 'olive oil', 'parmesan', 'butter', 'chili flakes', 'parsley'],
+  },
+  {
+    name: 'Mushroom Risotto',
+    emoji: '🍄',
+    category: 'dinner',
+    cookTime: '35 min',
+    description: 'Creamy Arborio rice with earthy mushrooms and aged parmesan.',
+    ingredients: ['rice', 'mushrooms', 'onion', 'garlic', 'parmesan', 'butter', 'chicken broth', 'white wine'],
+  },
+  {
+    name: 'Tacos',
+    emoji: '🌮',
+    category: 'dinner',
+    cookTime: '20 min',
+    description: 'Seasoned beef in warm tortillas loaded with fresh toppings.',
+    ingredients: ['tortillas', 'ground beef', 'lettuce', 'cheese', 'tomatoes', 'sour cream', 'onion', 'cumin'],
+  },
+  {
+    name: 'Quesadillas',
+    emoji: '🫓',
+    category: 'snack',
+    cookTime: '10 min',
+    description: 'Crispy flour tortillas oozing with melted cheese and peppers.',
+    ingredients: ['tortillas', 'cheese', 'chicken', 'bell pepper', 'onion', 'butter'],
+  },
+  {
+    name: 'Guacamole',
+    emoji: '🥑',
+    category: 'snack',
+    cookTime: '5 min',
+    description: 'Fresh, chunky guac with lime and cilantro — best eaten immediately.',
+    ingredients: ['avocado', 'lime', 'onion', 'cilantro', 'tomatoes', 'salt', 'jalapeño'],
+  },
+  {
+    name: 'Hummus',
+    emoji: '🫘',
+    category: 'snack',
+    cookTime: '10 min',
+    description: 'Silky blended chickpeas with tahini, lemon, and a drizzle of olive oil.',
+    ingredients: ['chickpeas', 'tahini', 'lemon', 'garlic', 'olive oil', 'cumin', 'salt'],
+  },
+  {
+    name: 'Mashed Potatoes',
+    emoji: '🥔',
+    category: 'dinner',
+    cookTime: '25 min',
+    description: 'Buttery, fluffy mashed potatoes — the ultimate comfort side dish.',
+    ingredients: ['potatoes', 'butter', 'milk', 'salt', 'pepper', 'cream'],
+  },
+  {
+    name: 'Banana Smoothie',
+    emoji: '🍌',
+    category: 'drink',
+    cookTime: '3 min',
+    description: 'A thick and creamy banana smoothie with a hint of honey.',
+    ingredients: ['banana', 'milk', 'yogurt', 'honey', 'vanilla'],
+  },
+  {
+    name: 'Lemonade',
+    emoji: '🍋',
+    category: 'drink',
+    cookTime: '5 min',
+    description: 'Bright, tangy homemade lemonade sweetened to perfection.',
+    ingredients: ['lemon', 'sugar', 'water', 'mint'],
+  },
+  {
+    name: 'Chocolate Chip Cookies',
+    emoji: '🍪',
+    category: 'dessert',
+    cookTime: '25 min',
+    description: 'Chewy golden cookies packed with melty chocolate chips.',
+    ingredients: ['flour', 'butter', 'sugar', 'eggs', 'chocolate chips', 'vanilla', 'baking soda', 'salt'],
+  },
+  {
+    name: 'Banana Bread',
+    emoji: '🍌',
+    category: 'dessert',
+    cookTime: '60 min',
+    description: 'Moist, fragrant loaf made with ripe bananas and warm spices.',
+    ingredients: ['banana', 'flour', 'sugar', 'eggs', 'butter', 'baking soda', 'vanilla', 'cinnamon'],
+  },
+  {
+    name: 'Scrambled Eggs',
+    emoji: '🍳',
+    category: 'breakfast',
+    cookTime: '5 min',
+    description: 'Soft, creamy scrambled eggs cooked low and slow in butter.',
+    ingredients: ['eggs', 'butter', 'milk', 'salt', 'pepper', 'chives'],
+  },
+];
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let ingredients = [];
+let sortMode    = 'best'; // 'best' | 'fewest'
+
+// ── Ingredient logic ──────────────────────────────────────────────────────────
+function addIngredient() {
+  const input = document.getElementById('ing-input');
+  const raw   = input.value.trim();
+  if (!raw) return;
+  // Allow comma-separated bulk entry
+  const parts = raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  parts.forEach(p => {
+    if (p && !ingredients.includes(p)) ingredients.push(p);
+  });
+  input.value = '';
+  input.focus();
+  renderChips();
+}
+
+function removeIngredient(ing) {
+  ingredients = ingredients.filter(i => i !== ing);
+  renderChips();
+}
+
+function clearAll() {
+  ingredients = [];
+  renderChips();
+  document.getElementById('results-area').innerHTML = '';
+}
+
+document.getElementById('ing-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addIngredient();
+});
+
+function renderChips() {
+  const container = document.getElementById('chips');
+  container.innerHTML = '';
+  ingredients.forEach(ing => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.innerHTML = `${ing}<button class="chip-x" title="Remove">×</button>`;
+    chip.querySelector('.chip-x').addEventListener('click', () => removeIngredient(ing));
+    container.appendChild(chip);
+  });
+  const countEl = document.getElementById('ing-count');
+  countEl.textContent = ingredients.length === 0
+    ? 'No ingredients yet'
+    : `${ingredients.length} ingredient${ingredients.length > 1 ? 's' : ''} added`;
+}
+
+// ── Matching ───────────────────────────────────────────────────────────────────
+function matches(userIngredients, recipeIngredient) {
+  const ri = recipeIngredient.toLowerCase();
+  return userIngredients.some(ui => ri.includes(ui) || ui.includes(ri));
+}
+
+function scoreRecipe(recipe) {
+  const have    = recipe.ingredients.filter(ri => matches(ingredients, ri));
+  const missing = recipe.ingredients.filter(ri => !matches(ingredients, ri));
+  const pct     = Math.round((have.length / recipe.ingredients.length) * 100);
+  return { ...recipe, have, missing, pct };
+}
+
+function findRecipes() {
+  if (ingredients.length === 0) {
+    showState('🥄', 'Add some ingredients first', 'Type an ingredient above and press + Add');
+    return;
+  }
+  let scored = RECIPES.map(scoreRecipe).filter(r => r.pct > 0);
+
+  if (scored.length === 0) {
+    showState('😅', 'No matches found', 'Try adding more common ingredients like eggs, butter, or garlic');
+    return;
+  }
+
+  if (sortMode === 'best') {
+    scored.sort((a, b) => b.pct - a.pct || a.missing.length - b.missing.length);
+  } else {
+    scored.sort((a, b) => a.missing.length - b.missing.length || b.pct - a.pct);
+  }
+
+  renderResults(scored);
+}
+
+// ── Rendering ──────────────────────────────────────────────────────────────────
+function showState(icon, title, hint) {
+  document.getElementById('results-area').innerHTML = `
+    <div class="state-box">
+      <div class="state-icon">${icon}</div>
+      <div class="state-title">${title}</div>
+      <div class="state-hint">${hint}</div>
+    </div>`;
+}
+
+function tierClass(pct) {
+  if (pct >= 70) return 'tier-high';
+  if (pct >= 40) return 'tier-mid';
+  return 'tier-low';
+}
+
+function renderResults(scored) {
+  const area = document.getElementById('results-area');
+  area.innerHTML = `
+    <div class="recipes-header">${scored.length} recipe${scored.length > 1 ? 's' : ''} found</div>
+    <div class="sort-row">
+      <span class="sort-label">Sort by</span>
+      <button class="sort-btn ${sortMode==='best'?'active':''}" onclick="setSort('best')">Best Match</button>
+      <button class="sort-btn ${sortMode==='fewest'?'active':''}" onclick="setSort('fewest')">Fewest Missing</button>
+    </div>
+    <div class="recipes-grid" id="grid"></div>`;
+
+  const grid = document.getElementById('grid');
+  scored.forEach((r, idx) => {
+    const card = document.createElement('div');
+    card.className = 'recipe-card';
+    card.style.animationDelay = `${idx * 0.05}s`;
+
+    const tier = tierClass(r.pct);
+    const ingHTML = r.ingredients.map(ri =>
+      `<span class="ing-tag ${matches(ingredients, ri) ? 'ing-have' : 'ing-missing'}">${ri}</span>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-emoji">${r.emoji}</div>
+        <div class="card-meta">
+          <div class="card-name">${r.name}</div>
+          <div class="card-badges">
+            <span class="badge badge-${r.category}">${r.category}</span>
+            <span class="badge-time">⏱ ${r.cookTime}</span>
+          </div>
+        </div>
+      </div>
+      <div class="match-row ${tier}">
+        <div class="match-bar-track">
+          <div class="match-bar-fill" style="width:${r.pct}%"></div>
+        </div>
+        <span class="match-pct">${r.pct}%</span>
+      </div>
+      <div class="card-desc">${r.description}</div>
+      <div class="ingredients-title">Ingredients</div>
+      <div class="ingredients-list">${ingHTML}</div>
+      ${r.missing.length > 0
+        ? `<div style="margin-top:10px;font-size:0.76rem;color:rgba(255,255,255,0.25);">
+             Missing: ${r.missing.join(', ')}
+           </div>`
+        : `<div style="margin-top:10px;font-size:0.76rem;color:#69f0ae;">✓ You have everything!</div>`
+      }`;
+
+    grid.appendChild(card);
+  });
+}
+
+function setSort(mode) {
+  sortMode = mode;
+  findRecipes();
+}
+
+// Boot: show empty state
+showState('🍽️', 'Your recipe suggestions will appear here', 'Start by adding ingredients you have on hand');
+</script>
+</body>
+</html>
