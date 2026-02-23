@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>From Baby to Adult</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.3rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #f8cdda, #a18cd1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    #stage-label {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #f8cdda;
+      margin-bottom: 0.2rem;
+      min-height: 2rem;
+      transition: all 0.5s;
+    }
+
+    #age-display {
+      font-size: 1rem;
+      color: #a18cd1;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── Scene ── */
+    #scene {
+      width: 340px;
+      height: 360px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Ground */
+    #ground {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 40px;
+      background: linear-gradient(180deg, #2e7d32, #1b5e20);
+      border-radius: 0 0 12px 12px;
+    }
+
+    /* ── Character ── */
+    #character {
+      position: absolute;
+      bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform-origin: bottom center;
+      transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Head */
+    .head {
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.8s ease;
+      background: #FDBCB4;
+      flex-shrink: 0;
+    }
+
+    /* Hair */
+    .hair {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: all 0.8s ease;
+    }
+
+    /* Eyes */
+    .eyes {
+      display: flex;
+      gap: 6px;
+      position: absolute;
+      transition: all 0.8s ease;
+    }
+
+    .eye {
+      background: #333;
+      border-radius: 50%;
+      position: relative;
+      transition: all 0.8s ease;
+    }
+
+    .eye::after {
+      content: '';
+      position: absolute;
+      top: 1px; right: 1px;
+      width: 3px; height: 3px;
+      background: #fff;
+      border-radius: 50%;
+    }
+
+    /* Mouth */
+    .mouth {
+      position: absolute;
+      border-radius: 0 0 50% 50%;
+      background: transparent;
+      border-bottom: 3px solid #c0392b;
+      transition: all 0.8s ease;
+    }
+
+    /* Body */
+    .body {
+      border-radius: 8px;
+      transition: all 0.8s ease;
+      position: relative;
+    }
+
+    /* Legs */
+    .legs {
+      display: flex;
+      gap: 4px;
+      transition: all 0.8s ease;
+    }
+
+    .leg {
+      background: #555;
+      border-radius: 4px;
+      transition: all 0.8s ease;
+    }
+
+    /* Arms */
+    .arms {
+      position: absolute;
+      width: 100%;
+      top: 8px;
+      display: flex;
+      justify-content: space-between;
+      transition: all 0.8s ease;
+    }
+
+    .arm {
+      background: inherit;
+      border-radius: 4px;
+      transition: all 0.8s ease;
+    }
+
+    /* ── Progress & Controls ── */
+    #controls {
+      width: 340px;
+    }
+
+    #progress-bar-wrap {
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+      margin-bottom: 0.8rem;
+    }
+
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #f8cdda, #a18cd1);
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.8s ease;
+    }
+
+    #slider {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.15);
+      outline: none;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+
+    #slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f8cdda, #a18cd1);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(161,140,209,0.7);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 0.5rem 1.4rem;
+      border: none;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
+
+    #btn-play {
+      background: linear-gradient(135deg, #f8cdda, #a18cd1);
+      color: #1a1a2e;
+    }
+
+    #btn-reset {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
+
+    /* Stage dots */
+    #stage-dots {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+    }
+
+    .dot-label {
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      width: 60px;
+    }
+
+    /* Background elements */
+    .bg-circle {
+      position: fixed;
+      border-radius: 50%;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+
+    .sun {
+      position: absolute;
+      top: 20px; right: 40px;
+      width: 50px; height: 50px;
+      background: #FFD700;
+      border-radius: 50%;
+      box-shadow: 0 0 30px #FFD700;
+      transition: all 0.8s ease;
+    }
+
+    .cloud {
+      position: absolute;
+      background: rgba(255,255,255,0.85);
+      border-radius: 999px;
+      transition: all 0.8s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-circle" style="width:400px;height:400px;background:#a18cd1;top:-100px;left:-100px;"></div>
+  <div class="bg-circle" style="width:300px;height:300px;background:#f8cdda;bottom:-80px;right:-80px;"></div>
+
+  <h1>Life Journey</h1>
+  <div id="stage-label">Newborn</div>
+  <div id="age-display">Age: 0</div>
+
+  <div id="scene">
+    <!-- Sun -->
+    <div class="sun" id="sun"></div>
+
+    <!-- Clouds -->
+    <div class="cloud" id="cloud1" style="width:70px;height:22px;top:50px;left:20px;"></div>
+    <div class="cloud" id="cloud2" style="width:50px;height:16px;top:60px;left:60px;"></div>
+
+    <!-- Ground -->
+    <div id="ground"></div>
+
+    <!-- Character -->
+    <div id="character">
+      <div class="head" id="head">
+        <div class="hair" id="hair"></div>
+        <div class="eyes" id="eyes">
+          <div class="eye" id="eye-l"></div>
+          <div class="eye" id="eye-r"></div>
+        </div>
+        <div class="mouth" id="mouth"></div>
+      </div>
+      <div class="body" id="body">
+        <div class="arms" id="arms">
+          <div class="arm" id="arm-l"></div>
+          <div class="arm" id="arm-r"></div>
+        </div>
+      </div>
+      <div class="legs" id="legs">
+        <div class="leg" id="leg-l"></div>
+        <div class="leg" id="leg-r"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <div id="stage-dots">
+      <div class="dot-label">Baby<br/>0</div>
+      <div class="dot-label">Toddler<br/>3</div>
+      <div class="dot-label">Child<br/>8</div>
+      <div class="dot-label">Teen<br/>14</div>
+      <div class="dot-label">Adult<br/>18+</div>
+    </div>
+    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+    <input type="range" id="slider" min="0" max="100" value="0" />
+    <div class="btn-row">
+      <button id="btn-play">▶ Play</button>
+      <button id="btn-reset">↺ Reset</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Life stages ──────────────────────────────────────────────
+    const stages = [
+      {
+        name: 'Newborn',
+        ageRange: '0–1',
+        t: 0,
+        headSize: 68, bodyW: 44, bodyH: 36,
+        legW: 9, legH: 22,
+        armW: 8, armH: 22,
+        eyeSize: 9,
+        bodyColor: '#FFB347', skinColor: '#FDBCB4',
+        hairStyle: 'none', hairColor: '#333',
+        mouthW: 14, mouthH: 5,
+        legColor: '#FDBCB4', shoeColor: '#FDBCB4',
+      },
+      {
+        name: 'Baby',
+        ageRange: '1–3',
+        t: 0.15,
+        headSize: 72, bodyW: 48, bodyH: 42,
+        legW: 11, legH: 28,
+        armW: 9, armH: 26,
+        eyeSize: 9,
+        bodyColor: '#FF8C69', skinColor: '#FDBCB4',
+        hairStyle: 'tiny', hairColor: '#c8a96e',
+        mouthW: 16, mouthH: 5,
+        legColor: '#7EC8E3', shoeColor: '#FF6B6B',
+      },
+      {
+        name: 'Toddler',
+        ageRange: '3–5',
+        t: 0.28,
+        headSize: 66, bodyW: 48, bodyH: 50,
+        legW: 13, legH: 36,
+        armW: 10, armH: 30,
+        eyeSize: 8,
+        bodyColor: '#98D8C8', skinColor: '#FDBCB4',
+        hairStyle: 'short', hairColor: '#c8a96e',
+        mouthW: 16, mouthH: 5,
+        legColor: '#7EC8E3', shoeColor: '#FF6B6B',
+      },
+      {
+        name: 'Young Child',
+        ageRange: '5–8',
+        t: 0.42,
+        headSize: 58, bodyW: 50, bodyH: 62,
+        legW: 14, legH: 48,
+        armW: 11, armH: 38,
+        eyeSize: 7,
+        bodyColor: '#7EC8E3', skinColor: '#FDBCB4',
+        hairStyle: 'short', hairColor: '#8B4513',
+        mouthW: 16, mouthH: 5,
+        legColor: '#4A90D9', shoeColor: '#333',
+      },
+      {
+        name: 'Child',
+        ageRange: '8–11',
+        t: 0.55,
+        headSize: 52, bodyW: 52, bodyH: 76,
+        legW: 15, legH: 62,
+        armW: 12, armH: 48,
+        eyeSize: 6,
+        bodyColor: '#6ab4f5', skinColor: '#FDBCB4',
+        hairStyle: 'medium', hairColor: '#5D3A1A',
+        mouthW: 16, mouthH: 5,
+        legColor: '#2c5f8a', shoeColor: '#222',
+      },
+      {
+        name: 'Pre-Teen',
+        ageRange: '11–13',
+        t: 0.65,
+        headSize: 48, bodyW: 54, bodyH: 90,
+        legW: 16, legH: 76,
+        armW: 12, armH: 56,
+        eyeSize: 6,
+        bodyColor: '#5a9fd4', skinColor: '#F5CBA7',
+        hairStyle: 'medium', hairColor: '#3B2A1A',
+        mouthW: 16, mouthH: 4,
+        legColor: '#2e4d70', shoeColor: '#111',
+      },
+      {
+        name: 'Teenager',
+        ageRange: '13–16',
+        t: 0.75,
+        headSize: 46, bodyW: 56, bodyH: 104,
+        legW: 17, legH: 90,
+        armW: 13, armH: 64,
+        eyeSize: 6,
+        bodyColor: '#4a7ab5', skinColor: '#F0C5A0',
+        hairStyle: 'long', hairColor: '#2C1A0E',
+        mouthW: 17, mouthH: 4,
+        legColor: '#1a2f4a', shoeColor: '#111',
+      },
+      {
+        name: 'Young Adult',
+        ageRange: '18–25',
+        t: 0.88,
+        headSize: 46, bodyW: 60, bodyH: 118,
+        legW: 19, legH: 104,
+        armW: 14, armH: 72,
+        eyeSize: 5,
+        bodyColor: '#2c4d7e', skinColor: '#EAB88F',
+        hairStyle: 'long', hairColor: '#1A0E06',
+        mouthW: 18, mouthH: 4,
+        legColor: '#111', shoeColor: '#000',
+      },
+      {
+        name: 'Adult',
+        ageRange: '25+',
+        t: 1.0,
+        headSize: 46, bodyW: 64, bodyH: 128,
+        legW: 20, legH: 110,
+        armW: 14, armH: 76,
+        eyeSize: 5,
+        bodyColor: '#1a3050', skinColor: '#E8A87C',
+        hairStyle: 'long', hairColor: '#0D0703',
+        mouthW: 18, mouthH: 4,
+        legColor: '#0a0a0a', shoeColor: '#000',
+      },
+    ];
+
+    // ── DOM refs ──────────────────────────────────────────────────
+    const head    = document.getElementById('head');
+    const hair    = document.getElementById('hair');
+    const eyes    = document.getElementById('eyes');
+    const eyeL    = document.getElementById('eye-l');
+    const eyeR    = document.getElementById('eye-r');
+    const mouth   = document.getElementById('mouth');
+    const body    = document.getElementById('body');
+    const arms    = document.getElementById('arms');
+    const armL    = document.getElementById('arm-l');
+    const armR    = document.getElementById('arm-r');
+    const legs    = document.getElementById('legs');
+    const legL    = document.getElementById('leg-l');
+    const legR    = document.getElementById('leg-r');
+    const stageLabel = document.getElementById('stage-label');
+    const ageDisplay = document.getElementById('age-display');
+    const progressBar = document.getElementById('progress-bar');
+    const slider  = document.getElementById('slider');
+    const btnPlay = document.getElementById('btn-play');
+    const btnReset = document.getElementById('btn-reset');
+    const sun     = document.getElementById('sun');
+
+    // ── Interpolation helpers ─────────────────────────────────────
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function lerpColor(hex1, hex2, t) {
+      const c1 = hexToRgb(hex1), c2 = hexToRgb(hex2);
+      const r = Math.round(lerp(c1.r, c2.r, t));
+      const g = Math.round(lerp(c1.g, c2.g, t));
+      const b = Math.round(lerp(c1.b, c2.b, t));
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : {r:0,g:0,b:0};
+    }
+
+    function findStages(progress) {
+      // progress 0..1
+      let low = stages[0], high = stages[stages.length - 1];
+      let localT = 0;
+      for (let i = 0; i < stages.length - 1; i++) {
+        if (progress >= stages[i].t && progress <= stages[i+1].t) {
+          low = stages[i]; high = stages[i+1];
+          const span = high.t - low.t;
+          localT = span === 0 ? 0 : (progress - low.t) / span;
+          break;
+        }
+      }
+      return { low, high, localT };
+    }
+
+    function applyProgress(progress) {
+      const { low, high, localT } = findStages(progress);
+      const s = {};
+      const numKeys = ['headSize','bodyW','bodyH','legW','legH','armW','armH','eyeSize','mouthW','mouthH'];
+      numKeys.forEach(k => s[k] = lerp(low[k], high[k], localT));
+      const colorKeys = ['bodyColor','skinColor','hairColor','legColor','shoeColor'];
+      colorKeys.forEach(k => s[k] = lerpColor(low[k], high[k], localT));
+
+      // pick label from closer stage
+      const currentStage = localT < 0.5 ? low : high;
+      stageLabel.textContent = currentStage.name;
+
+      // Age: map progress 0→1 to 0→30
+      const age = Math.round(progress * 30);
+      ageDisplay.textContent = `Age: ${age}`;
+
+      // Progress bar
+      progressBar.style.width = (progress * 100) + '%';
+
+      // Apply HEAD
+      head.style.width  = s.headSize + 'px';
+      head.style.height = s.headSize + 'px';
+      head.style.background = s.skinColor;
+
+      // Apply EYES position inside head
+      const eyeTop = s.headSize * 0.42;
+      eyes.style.top = eyeTop + 'px';
+      eyeL.style.width  = eyeR.style.width  = s.eyeSize + 'px';
+      eyeL.style.height = eyeR.style.height = s.eyeSize + 'px';
+
+      // Apply MOUTH
+      mouth.style.width  = s.mouthW + 'px';
+      mouth.style.height = s.mouthH + 'px';
+      mouth.style.bottom = (s.headSize * 0.18) + 'px';
+      mouth.style.left   = `calc(50% - ${s.mouthW/2}px)`;
+
+      // Apply HAIR
+      const hairStyle = localT < 0.5 ? low.hairStyle : high.hairStyle;
+      applyHair(hairStyle, s.hairColor, s.headSize);
+
+      // Apply BODY
+      body.style.width  = s.bodyW + 'px';
+      body.style.height = s.bodyH + 'px';
+      body.style.background = s.bodyColor;
+      body.style.marginTop = '2px';
+
+      // Apply ARMS
+      const armOffset = -(s.armW + 2);
+      arms.style.left  = armOffset + 'px';
+      arms.style.right = armOffset + 'px';
+      arms.style.width = `calc(100% + ${s.armW * 2 + 4}px)`;
+      armL.style.width = armR.style.width = s.armW + 'px';
+      armL.style.height = armR.style.height = s.armH + 'px';
+      armL.style.background = armR.style.background = s.skinColor;
+
+      // Apply LEGS
+      legL.style.width = legR.style.width = s.legW + 'px';
+      legL.style.height = legR.style.height = s.legH + 'px';
+      legL.style.background = legR.style.background = s.legColor;
+
+      // Sun color based on progress (morning yellow → afternoon orange)
+      const sunOpacity = 0.8 + progress * 0.2;
+      sun.style.opacity = sunOpacity;
+    }
+
+    function applyHair(style, color, headSize) {
+      hair.style.background = color;
+      hair.style.borderRadius = '50% 50% 0 0';
+      switch(style) {
+        case 'none':
+          hair.style.width = '0'; hair.style.height = '0'; break;
+        case 'tiny':
+          hair.style.width = '18px'; hair.style.height = '12px'; break;
+        case 'short':
+          hair.style.width = (headSize * 0.65) + 'px'; hair.style.height = '14px'; break;
+        case 'medium':
+          hair.style.width = (headSize * 0.85) + 'px'; hair.style.height = '18px'; break;
+        case 'long':
+          hair.style.width = headSize + 'px'; hair.style.height = '22px'; break;
+      }
+    }
+
+    // ── Animation loop ────────────────────────────────────────────
+    let animId = null;
+    let progress = 0;
+    let playing = false;
+    const DURATION = 8000; // ms for full life cycle
+    let startTime = null;
+    let startProgress = 0;
+
+    function animate(ts) {
+      if (!startTime) startTime = ts;
+      const elapsed = ts - startTime;
+      const delta = (elapsed / DURATION);
+      progress = Math.min(startProgress + delta, 1);
+      applyProgress(progress);
+      slider.value = progress * 100;
+
+      if (progress < 1) {
+        animId = requestAnimationFrame(animate);
+      } else {
+        playing = false;
+        btnPlay.textContent = '▶ Replay';
+        startTime = null;
+      }
+    }
+
+    function play() {
+      if (playing) return;
+      playing = true;
+      startProgress = progress;
+      startTime = null;
+      btnPlay.textContent = '⏸ Playing…';
+      animId = requestAnimationFrame(animate);
+    }
+
+    function reset() {
+      if (animId) { cancelAnimationFrame(animId); animId = null; }
+      playing = false;
+      progress = 0;
+      startTime = null;
+      startProgress = 0;
+      slider.value = 0;
+      applyProgress(0);
+      btnPlay.textContent = '▶ Play';
+    }
+
+    btnPlay.addEventListener('click', () => {
+      if (progress >= 1) reset();
+      play();
+    });
+
+    btnReset.addEventListener('click', reset);
+
+    slider.addEventListener('input', () => {
+      if (animId) { cancelAnimationFrame(animId); animId = null; playing = false; startTime = null; }
+      progress = slider.value / 100;
+      startProgress = progress;
+      applyProgress(progress);
+      btnPlay.textContent = progress >= 1 ? '▶ Replay' : '▶ Play';
+    });
+
+    // ── Init ──────────────────────────────────────────────────────
+    applyProgress(0);
+  </script>
+</body>
+</html>
